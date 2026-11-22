@@ -1,0 +1,12 @@
+# Runtime dependencies and optional Windows packaging.
+# Setup installs only the application; the build script adds PyInstaller.
+
+# Server and GUI
+cryptography==50.0.2
+cffi==2.1.1 ; platform_python_implementation != 'PyPy'
+pycparser==3.12 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
+PySide6-Essentials==6.12.0
+shiboken6==6.12.0
+
+# Optional Windows executable build; actual build versions are recorded in the package
+PyInstaller>=6.11,<7

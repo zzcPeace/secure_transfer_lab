@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "secure-transfer-lab"
+version = "1.0.0"
+description = "Software and System Security lab 1B: mutually authenticated file transfer"
+requires-python = ">=3.12"
+dependencies = ["cryptography>=46,<51"]
+
+[project.optional-dependencies]
+gui = ["PySide6-Essentials>=6.8,<7"]
+build = ["PyInstaller>=6.11,<7"]
+
+[project.scripts]
+sft = "sft.__main__:main"
+sft-gui = "sft.gui:main"
+
+[tool.setuptools.packages.find]
+include = ["sft*"]
