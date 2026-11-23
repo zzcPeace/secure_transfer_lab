@@ -39,9 +39,11 @@ cd secure_transfer_lab
 普通用户可以有多个，VIP 也可以有多个。`normal` / `vip` 是账户类型，不是账户本身。
 每个独立用户使用自己的证书、文件列表、任务历史和带宽额度；多个窗口使用同一份 alice 配置，仍属于同一个用户。
 
-正式报告的 Word/PDF 版本随实验材料单独提供，`docs/` 不上传至 GitHub。部署和操作步骤见下文。
+正式报告以 Word（DOCX）格式单独提供，`docs/` 不上传至 GitHub。两套部署方案、功能展示和 Windows 打包说明统一见本 README。
 
 ## 运行
+
+以下两套方案任选其一，各自包含完整的部署与功能展示步骤。Linux 方案通过 MobaXterm 显示远程窗口；Windows 方案在本机运行服务端和客户端。
 
 ### 部署方案一：Linux服务器端运行
 
@@ -268,7 +270,7 @@ bash scripts/start-client.sh runtime/clients/charlie/client.json
 
 ##### 9. 多用户并发与普通/VIP 对比（加分项：按身份限速）
 
-按第 6 节创建 charlie，并排摆放 alice、charlie 两个已连接窗口。
+按本方案“功能展示”第 7 步创建 charlie，并排摆放 alice、charlie 两个已连接窗口。
 alice 开始上传两个大文件后，立即让 charlie 上传 `user-charlie-*`，保持两个窗口同时显示正在增长的进度。
 两人应显示不同用户名、相同 NORMAL 类型，各自拥有 512 KiB/s 的上传额度和独立文件列表。
 在多用户并发期间也可让其中一人下载，观察服务端持续响应其他用户。
@@ -296,106 +298,254 @@ bash scripts/start-client.sh runtime/clients/bob/client.json
 
 ### 部署方案二：在 Windows 运行完整实验
 
-服务端和客户端都在 Windows 本机运行，通过 `127.0.0.1:18765` 通信。
-安装 [Python 3.14（64 位）](https://www.python.org/downloads/windows/) 和 [Microsoft Visual C++ x64 运行库](https://aka.ms/vc14/vc_redist.x64.exe)。安装 Python 时勾选“Add python.exe to PATH”。
+服务端和客户端都在同一台 Windows 10/11（64 位）电脑运行，通过 `127.0.0.1:18765` 通信。文件选择和下载目录均使用 Windows 本机路径。
 
-从仓库下载源码并解压，重新打开 PowerShell，在项目目录执行：
+#### 1. 安装 Python 并打开项目目录
+
+安装 [Python 3.14（64 位）](https://www.python.org/downloads/windows/) 和 [Microsoft Visual C++ x64 运行库](https://aka.ms/vc14/vc_redist.x64.exe)。安装 Python 时勾选 **“Add python.exe to PATH”**。
+
+从 [GitHub 仓库](https://github.com/zzcPeace/secure_transfer_lab) 选择 **Code → Download ZIP**，解压后找到包含 `README.md`、`sft/` 和 `scripts/` 的项目目录。
+
+重新打开 **PowerShell**，进入项目目录并检查 Python：
 
 ```powershell
+cd "D:\secure_transfer_lab"
 python --version
+```
+
+下文以 `D:\secure_transfer_lab` 为例，请替换为实际解压路径。`.ps1` 脚本均在 PowerShell 中通过命令执行。
+
+#### 2. 准备项目环境
+
+首次运行时，在项目目录执行：
+
+```powershell
 python -m venv .venv
 .\scripts\setup.ps1
 ```
 
-`python -m venv .venv` 使用系统 Python 在项目内创建 `.venv` 虚拟环境，单独存放本实验依赖。
-`setup.ps1` 安装依赖、首次生成证书和用户配置，并检查 Qt 窗口。这两步只需在首次安装时执行。
+`python -m venv .venv` 使用系统 Python，在项目内创建名为 `.venv` 的虚拟环境，用于单独存放本实验依赖。
+`setup.ps1` 按 `requirements.txt` 安装依赖，首次生成 `runtime/` 中的证书和 alice/bob 配置，并检查 Qt 窗口；已有 `runtime/` 会保留。
 
-打开两个 PowerShell 窗口，分别进入项目目录并启动：
+看到 `Ready. Run scripts/start-server.ps1 and scripts/start-client.ps1 in separate terminals.` 后继续。若提示禁止运行脚本，在当前 PowerShell 执行 `Set-ExecutionPolicy -Scope Process Bypass`，再重试原命令。
+
+#### 3. 启动服务端
+
+在第一个 PowerShell 窗口执行，并保持该窗口运行：
 
 ```powershell
-# 窗口 1：服务端，保持运行
+cd "D:\secure_transfer_lab"
 .\scripts\start-server.ps1
 ```
 
+出现 `Listening on 127.0.0.1:18765` 表示服务端已开始监听。
+
+#### 4. 启动客户端
+
+另开一个 PowerShell 窗口，执行：
+
 ```powershell
-# 窗口 2：普通用户 alice
+cd "D:\secure_transfer_lab"
 .\scripts\start-client.ps1
 ```
 
-启动脚本使用 `.venv\Scripts\python.exe`，无需手动激活环境或编译源码。
-界面操作参照上方“功能展示”，文件选择和下载目录使用 Windows 本机路径。
+默认打开普通用户 alice 的客户端。按下方“功能展示”连接并测试。
 
-需要第二个普通用户时，在项目目录创建一次，再在新窗口启动：
+以后使用时只需重复第 3、4 步。启动脚本直接使用 `.venv\Scripts\python.exe`，无需手动激活环境或编译源码。结束时关闭客户端，在服务端窗口按 **Ctrl+C** 停止服务；保留 `.venv/` 和 `runtime/` 供下次使用。
 
-```powershell
-.\.venv\Scripts\python.exe -m sft add-user charlie --role normal
-.\scripts\start-client.ps1 -Profile runtime/clients/charlie/client.json
-```
+#### 功能展示
 
-VIP 客户端在另一个窗口启动：
+保持服务端和 alice 客户端运行，另开一个 PowerShell 窗口并进入项目目录，执行下面的文件生成、用户创建等辅助命令。
 
-```powershell
-.\scripts\start-client.ps1 -Profile runtime/clients/bob/client.json
-```
-
-生成基础、并发或带宽比较文件：
+##### 1. 准备演示文件
 
 ```powershell
 .\.venv\Scripts\python.exe scripts/make-demo-files.py
-.\.venv\Scripts\python.exe scripts/make-demo-files.py --concurrency
-.\.venv\Scripts\python.exe scripts/make-demo-files.py --bandwidth
+New-Item -ItemType Directory -Force runtime\downloads
 ```
 
-基础文件已存在时无需重复生成。后两条命令每次生成新的文件目录。
-若 PowerShell 阻止脚本，在当前窗口执行 `Set-ExecutionPolicy -Scope Process Bypass` 后重试。
-若 Qt 窗口加载失败，先确认 Python 依赖和 x64 C++ 运行库安装成功，可执行 `.\.venv\Scripts\python.exe -m sft probe-gui` 检查。
+基础文件生成在 `runtime\demo-files`，下载文件保存到 `runtime\downloads`。下载目录应位于有写权限的 NTFS 磁盘。
 
-#### 功能展示：公钥身份认证（加分项）
+| 文件 | 大小 | 用途 |
+|---|---|---|
+| `small.bin` | 128 KiB | 第一次上传和下载 |
+| `medium.bin` | 2 MiB | 较大文件传输 |
+| `large.bin` | 8 MiB | 观察进度，演示暂停和续传 |
+| `说明.txt` | UTF-8 文本 | 中文文件名和文本内容 |
+| `empty.txt` | 0 字节 | 空文件传输 |
 
-Windows 本机同样单独演示此项。在 alice 窗口连接后，确认身份栏的 `alice / NORMAL`、“TLS 1.3 双向认证”以及底部“证书验证通过”日志。保持服务端运行，在另一个 PowerShell 窗口进入项目目录，执行：
+脚本不会覆盖已有文件；基础文件已存在时直接使用。
+
+##### 2. 连接服务器
+
+客户端顶部“客户端配置”默认指向 `runtime/clients/alice/client.json`。点击 **“连接服务器”**，成功后身份栏显示：
+
+```text
+已连接 · alice / NORMAL · TLS 1.3 双向认证 · 上传 512.0 KiB/s · 下载 512.0 KiB/s
+```
+
+底部日志显示“证书验证通过，控制连接及传输连接已建立。”。应用使用证书认证，无须输入账号密码。
+
+点击“断开”后，“我的远端文件”和“传输任务”同时清空显示；重新连接后恢复当前用户的文件列表与任务历史。未完成任务可选中后点击“继续 / 重试”。
+
+##### 3. 公钥身份认证（加分项）
+
+确认 alice 窗口显示上述身份和证书验证日志，保持服务端运行，在辅助 PowerShell 窗口执行：
 
 ```powershell
 .\.venv\Scripts\python.exe scripts/demo-auth.py
 ```
 
-预期依次看到：有效证书和对应私钥认证成功；不携带客户端证书时连接被拒绝；恢复有效凭据后再次认证成功。最终输出“公钥身份认证演示通过”。如果服务未启动或网络超时，先处理启动问题再重试，不能将其当作认证拒绝。
+预期依次看到：
 
-脚本仅查询身份，不修改证书、账户、配置或传输文件，也不会输出私钥。无需安装 OpenSSL 命令行工具。再连接已打开的 bob 窗口，确认 `bob / VIP`，展示不同证书映射到不同用户。
+1. 使用有效客户端证书和匹配私钥，认证成功并返回 `alice / NORMAL`。
+2. 不携带客户端证书，连接被拒绝，无法取得已认证身份。
+3. 恢复有效凭据，再次认证成功，最终输出 **“公钥身份认证演示通过”**。
 
-原理是客户端通过私钥对 TLS 1.3 握手内容签名，服务端使用证书中的公钥验证，并按已登记的证书指纹识别账户；仅有公开证书不能冒用身份。验收时展示 GUI 身份、验证日志和认证脚本完整输出。
+客户端使用私钥对 TLS 握手内容签名，服务端使用证书中的公钥验证，并按登记的证书指纹识别用户。仅有公开证书不能冒用身份。脚本仅查询身份，无须安装 OpenSSL 命令行工具；服务未启动、网络超时不能当作认证拒绝的证据。
 
-#### 功能展示：双向断点续传（加分项）
+完成后面的 bob 演示时，还可对照两个窗口的 `alice / NORMAL` 与 `bob / VIP`，展示不同证书对应不同身份。保留身份栏、验证日志和脚本完整输出作为验收依据。
 
-alice 上传 `runtime/demo-files/large.bin`，在任务完成前暂停，再点击“继续 / 重试”，观察从保存进度继续。上传完成后，将文件下载到新的空目录，同样暂停并继续，最终均应通过 SHA-256 校验。还可暂停后关闭客户端，重开、连接并继续原任务，验证重启恢复。
+##### 4. 上传文件
 
-#### 功能展示：GUI 多文件同时上传/下载（加分项）
+1. 点击 **“＋ 上传文件…”**，选择 `runtime\demo-files\small.bin`。
+2. 观察下方“传输任务”的进度和速度。
+3. 完成后确认状态为“已完成”、详情为“SHA-256 校验通过”；上方“我的远端文件”出现 `small.bin`，大小为 128 KiB。
 
-使用前面 `--concurrency` 生成的文件集。上传时按 Ctrl 多选 `upload-a-*` 和 `upload-b-*`，观察两项进度同期增长；完成后在远端列表多选这两个文件，下载到新的空目录，再观察并发下载。另选新文件上传，同时下载已完成文件，可以演示上传与下载混合并发，最终各项均应校验通过。
+可继续上传 `说明.txt` 和 `empty.txt`，检查中文文件名与空文件。
 
-#### 功能展示：按用户身份控制带宽（加分项）
+##### 5. 下载文件并验证完整性
 
-使用前面 `--bandwidth` 生成的 128 MiB 新文件，让 alice 和 bob 各只运行一项上传，比较稳定速度及耗时。普通用户每方向总限速为 512 KiB/s，VIP 为 4 MiB/s；再测试同一用户的多个并发任务，确认合计受该用户限额约束。多用户同时访问本身属于基础要求，此加分项展示的是按身份分配并共享带宽额度。
+1. 在上方远端文件列表选中 `small.bin`，点击 **“↓ 下载选中文件…”**。
+2. 选择项目下的 `runtime\downloads` 作为接收目录。
+3. 等待下载任务完成，确认“SHA-256 校验通过”。
 
-#### Windows EXE 打包与运行
+在辅助 PowerShell 窗口比较源文件与下载文件：
 
-在已经完成环境安装的 Windows 项目目录执行：
+```powershell
+Get-FileHash runtime\demo-files\small.bin -Algorithm SHA256
+Get-FileHash runtime\downloads\small.bin -Algorithm SHA256
+```
+
+两条结果的 `Hash` 应完全一致。
+
+##### 6. 上传和下载断点续传（加分项）
+
+使用普通用户 alice 和 `large.bin` 演示，便于在传输完成前操作。
+
+1. **上传续传**：上传 `runtime\demo-files\large.bin`。完成前，在下方选中该任务，点击“暂停选中”；等待“已暂停”后记录已完成字节，再点击“继续 / 重试”，观察从保存进度继续。
+2. **下载续传**：上传完成后，将远端 `large.bin` 下载到新的空目录，同样暂停、记录进度并继续。
+3. **客户端重启恢复**：暂停一个未完成任务后关闭客户端，重新执行 `.\scripts\start-client.ps1`，连接服务器，再选中原任务继续。
+4. **服务端重启恢复**：传输未完成时，在服务端窗口按 Ctrl+C，再执行 `.\scripts\start-server.ps1`。客户端重连后继续原任务；任务仍未完成时点击“继续 / 重试”。
+
+各项最终均应完成并通过 SHA-256 校验。测试期间保留原 `runtime/`、上传源文件和下载目标目录。续传使用“暂停选中”；“取消任务”会结束上传并清理未完成片段。
+
+重复演示时使用新文件名或新生成的文件，下载选择新的空目录，避免同名同内容文件被直接复用。
+
+##### 7. 多个普通用户同时使用
+
+在辅助 PowerShell 窗口创建一次普通用户 charlie：
+
+```powershell
+.\.venv\Scripts\python.exe -m sft add-user charlie --role normal
+```
+
+命令生成 charlie 的独立证书及 `runtime/clients/charlie/client.json`，无需重启服务端。已有用户不重复创建。
+
+另开一个 PowerShell 窗口，进入项目目录并启动 charlie：
+
+```powershell
+cd "D:\secure_transfer_lab"
+.\scripts\start-client.ps1 -Profile runtime/clients/charlie/client.json
+```
+
+在新窗口点击“连接服务器”，确认显示 `charlie / NORMAL`。让 alice 和 charlie 同时上传不同文件，观察两个窗口在同一时间段内都有任务进度增长；完成后，两人各自只看到自己的文件。可使用下一步生成的 16 MiB 文件延长观察时间。
+
+两人都是普通用户，各有上传 512 KiB/s、下载 512 KiB/s 的额度。同一用户多个任务共享该用户的额度，不同用户分别计算。继续增加用户时替换命令中的用户名；创建 VIP 使用 `--role vip`。
+
+##### 8. GUI 多文件上传、下载与混合并发（加分项）
+
+在辅助 PowerShell 窗口生成一套新文件：
+
+```powershell
+.\.venv\Scripts\python.exe scripts/make-demo-files.py --concurrency
+```
+
+脚本输出一个独立目录，其中五个 `.bin` 文件各为 16 MiB，文件名带唯一后缀。按实际输出目录和下面的文件名前缀选择：
+
+1. **并发上传**：alice 点击“＋ 上传文件…”，按 Ctrl 同时选择 `upload-a-*`、`upload-b-*`，观察两行在同一时间段内都显示“传输中”、已完成字节持续增加。
+2. **并发下载**：上传完成后，在远端列表按 Ctrl 选中这两个文件，下载到新的空目录，观察两项下载同时推进。
+3. **上传与下载混合**：开始上传尚未上传的 `seed-download-*`，同时将一个已完成的远端文件下载到另一空目录，观察上传和下载两行同时增长。
+4. **多用户同时传输**：再生成一套新文件，让 alice 上传 `upload-a-*`、`upload-b-*`，同时让 charlie 上传 `user-charlie-*`，观察两个窗口的进度并检查各自文件列表。
+
+每个客户端默认三个传输连接，上传和下载合计最多三个文件同时传输，更多任务排队。所有任务最终均应通过校验；多个任务在同一时间段内推进才体现并发。第 4 项用于检查基础要求中的多用户并发和文件隔离。
+
+##### 9. 普通用户与 VIP 带宽对比（加分项：按用户身份控制带宽）
+
+另开一个 PowerShell 窗口，进入项目目录并启动 bob：
+
+```powershell
+cd "D:\secure_transfer_lab"
+.\scripts\start-client.ps1 -Profile runtime/clients/bob/client.json
+```
+
+点击“连接服务器”，确认身份为 `bob / VIP`，上传、下载限速各为 4 MiB/s。
+
+在辅助 PowerShell 窗口生成一个新的 **128 MiB** 比较文件：
+
+```powershell
+.\.venv\Scripts\python.exe scripts/make-demo-files.py --bandwidth
+```
+
+1. 在脚本输出目录中找到 `vip-compare-*` 文件，让 alice 和 bob 分别上传它；比较期间每人只运行这一项传输。
+2. 比较稳定传输阶段的速度与耗时。默认限额为 alice 512 KiB/s、bob 4 MiB/s；128 MiB 的理论传输时间分别约为 256 秒、32 秒，实际包含磁盘、校验和调度开销。
+3. 上传完成后，两人分别下载到各自新的空目录，比较下载方向。
+4. 再让同一用户同时传输多个新文件，观察同方向合计速度，确认多个任务共享该用户的限额。
+
+`--bandwidth` 每次生成新的目录和文件；需要缩小文件时可加 `--size-mib 64`。每个用户的上传与下载额度分别计算，多开连接不会获得多份完整额度。
+
+#### 可选：Windows EXE 打包与运行
+
+完成源码方式的安装和传输检查后，如需交付可双击运行的程序，在 Windows 项目目录执行：
 
 ```powershell
 .\scripts\build-windows.ps1
 ```
 
-输出 `dist/windows-时间戳/SecureTransfer-Windows-x64.zip`。解压完整程序目录后：
+脚本安装打包依赖，生成 `dist/windows-时间戳/SecureTransfer-Windows-x64.zip`。将完整 ZIP 解压到新的有写权限目录，进入其中的 `sftlab` 文件夹：
 
-1. 双击 `01-initialize.cmd`，首次生成实验配置。
+1. 双击 `01-initialize.cmd`，首次生成证书、账户和配置。
 2. 双击 `02-server.cmd`，保持服务端窗口运行。
-3. 双击 `03-alice.cmd`，在窗口中点击“连接服务器”。
-4. 需要 VIP 时双击 `04-bob.cmd`。
+3. 双击 `03-alice.cmd`，在客户端点击“连接服务器”。
+4. 需要 VIP 时双击 `04-bob.cmd`，同样点击连接。
 
-接收方无需安装 Python，但需保留 `sftlab.exe` 旁的 `_internal` 目录及所需的 Microsoft Visual C++ x64 运行库。交付前在新目录解压后检查文件传输、续传和并发功能。
+接收方无需安装 Python，但需要安装 Microsoft Visual C++ x64 运行库，并保留 `sftlab.exe` 旁的 `_internal` 目录及其余程序文件。首次初始化后，日常使用从服务端和客户端启动入口开始。
 
-### 按需安装依赖
+交付前使用解压后的程序检查上传、下载、续传和并发功能；源码修改后重新构建完整程序包。
 
-需要单独安装某项功能时，先激活项目的 `.venv`，在项目目录执行对应命令。`requirements.txt` 统一约束依赖版本。
+#### Windows 常见问题
+
+| 现象 | 处理方法 |
+|---|---|
+| `.ps1` 打开记事本 | 打开 PowerShell，进入项目目录后输入 `.\scripts\setup.ps1` 等命令执行。 |
+| 提示禁止运行脚本 | 在当前 PowerShell 执行 `Set-ExecutionPolicy -Scope Process Bypass` 后重试；该设置仅对当前窗口有效。 |
+| 找不到 `python` | 确认 Python 已安装并加入 PATH，重新打开 PowerShell，再执行 `python --version`。 |
+| 提示先运行 `setup` | 完成本方案第 2 步，看到 `Ready` 后再启动。 |
+| Qt DLL 加载失败 | 确认安装了 64 位 Python 和 Microsoft Visual C++ x64 运行库，重新运行 `setup.ps1`；可用下方命令单独检查窗口。 |
+| 端口被占用 | 执行 `Get-NetTCPConnection -LocalPort 18765 -State Listen` 查看；若本项目服务端已经运行，直接连接现有服务端。 |
+| 连接或证书验证失败 | 确认服务端保持运行，客户端地址为 `127.0.0.1:18765`，配置与证书来自本机同一套 `runtime/`。 |
+| 下载目标发布失败 | 选择有写权限的 NTFS 目录，确认文件未被其他程序占用，且不存在同名不同内容文件。 |
+| 传输立刻完成，无法观察进度 | 使用新生成的大文件，下载选择新的空目录，避免复用已有完整内容。 |
+
+单独检查图形环境：
+
+```powershell
+.\.venv\Scripts\python.exe -m sft probe-gui
+```
+
+## 可选：单独安装依赖
+
+正常部署使用上方的 `setup` 或 `build-windows.ps1` 即可；需要手动安装某项功能时，先激活项目的 `.venv`，再执行对应命令。`requirements.txt` 统一约束依赖版本。
 
 | 用途 | 安装命令 |
 |---|---|
@@ -440,14 +590,15 @@ GUI 取消上传会清理服务端片段并释放配额；取消下载保留本�
 ## 目录说明
 
 ```text
-sft/                    核心协议、证书、存储、服务端、客户端和 GUI
-scripts/                环境准备、启动、认证演示、演示文件生成及 Windows 打包
+README.md                Linux / Windows 部署、功能展示、常见问题及 Windows 打包说明
+sft/                     核心协议、证书、存储、服务端、客户端和 GUI
+scripts/                 环境准备、启动、认证演示、演示文件生成、Windows 打包及源码导出
 scripts/windows-package/ Windows 可执行包的双击启动入口
-docs/                  本地报告和补充说明，单独交付，不上传 GitHub
-requirements.txt        依赖版本清单
-pyproject.toml          项目配置与命令入口
-runtime/               本机证书、用户配置、任务状态、数据库及演示文件
-dist/                  可复制到 Windows 的源码 ZIP
+docs/                    本地 Word 实验报告，单独交付，不上传 GitHub
+requirements.txt         依赖版本清单
+pyproject.toml           项目配置与命令入口
+runtime/                 本机证书、用户配置、任务状态、数据库及演示文件
+dist/                    导出的源码 ZIP 或在 Windows 构建的程序包
 ```
 
 `.venv/` 是当前 Python 运行环境，`.local/qt/` 是本机 X11 所需的补充动态库。
@@ -455,13 +606,14 @@ dist/                  可复制到 Windows 的源码 ZIP
 
 ## 报告与源码导出
 
-报告可用 Word 编辑，PDF 用于阅读和提交。第 10 节给出部署、功能验收和程序交付的完整步骤。
+Word 报告位于 `docs/`，第 10 节分别说明 Linux 与 Windows 部署、功能验收和程序交付，附录列出源码与交付材料。
 
-在项目目录导出可复制到 Windows 的源码包：
+在项目目录按当前系统选择一条命令，导出源码包：
 
-```bash
-.venv/bin/python scripts/export-source.py
-```
+| 系统 | 命令 |
+|---|---|
+| Linux | `.venv/bin/python scripts/export-source.py` |
+| Windows PowerShell | `.\.venv\Scripts\python.exe scripts/export-source.py` |
 
 输出 `dist/SecureTransfer-source.zip` 及 SHA-256 校验文件，包含核心源码、运行脚本；本地存在 `docs/` 时也一并收录，便于单独交付。
-大文件在目标电脑运行 `scripts/make-demo-files.py --bandwidth` 生成。Windows EXE 按上方“Windows EXE 打包与运行”构建。
+大文件在目标电脑运行 `scripts/make-demo-files.py --bandwidth` 生成。Windows EXE 按上方“可选：Windows EXE 打包与运行”构建。
