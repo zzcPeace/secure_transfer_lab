@@ -306,6 +306,8 @@ bash scripts/start-client.sh runtime/clients/bob/client.json
 
 从 [GitHub 仓库](https://github.com/zzcPeace/secure_transfer_lab) 选择 **Code → Download ZIP**，解压后找到包含 `README.md`、`sft/` 和 `scripts/` 的项目目录。
 
+**项目目录尽量使用短路径**，例如 `C:\sftlab` 或 `D:\secure_transfer_lab`，避免嵌套多层长文件夹名。PySide6 的内部目录较深，完整安装路径过长可能触发 Windows 路径长度限制，导致依赖安装失败，并出现 `No such file or directory` 等错误。
+
 重新打开 **PowerShell**，进入项目目录并检查 Python：
 
 ```powershell
@@ -531,6 +533,7 @@ cd "D:\secure_transfer_lab"
 | 提示禁止运行脚本 | 在当前 PowerShell 执行 `Set-ExecutionPolicy -Scope Process Bypass` 后重试；该设置仅对当前窗口有效。 |
 | 找不到 `python` | 确认 Python 已安装并加入 PATH，重新打开 PowerShell，再执行 `python --version`。 |
 | 提示先运行 `setup` | 完成本方案第 2 步，看到 `Ready` 后再启动。 |
+| 安装 PySide6 时，报错路径很长并提示 `No such file or directory` | 将源码重新解压到 `C:\sftlab` 等短路径，在新位置重新创建 `.venv` 并运行 `setup.ps1`。 |
 | Qt DLL 加载失败 | 确认安装了 64 位 Python 和 Microsoft Visual C++ x64 运行库，重新运行 `setup.ps1`；可用下方命令单独检查窗口。 |
 | 端口被占用 | 执行 `Get-NetTCPConnection -LocalPort 18765 -State Listen` 查看；若本项目服务端已经运行，直接连接现有服务端。 |
 | 连接或证书验证失败 | 确认服务端保持运行，客户端地址为 `127.0.0.1:18765`，配置与证书来自本机同一套 `runtime/`。 |
